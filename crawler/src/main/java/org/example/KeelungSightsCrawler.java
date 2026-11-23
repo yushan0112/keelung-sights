@@ -20,9 +20,25 @@ public class KeelungSightsCrawler {
             Elements links = doc.select("#guide-point a");
             for (Element link : links){
                 String name = link.text();
+                String detailUrl = link.absUrl("href");
+                Document detailDoc = Jsoup.connect(detailUrl).userAgent("Mozilla/5.0").timeout(10000).get();
+                String address;
+                String category;
+                String photoURL;
+                String description;
+                address = getText(detailDoc, "[property=vcard:street-address]");
+                category = getText(detailDoc, ".point_type strong");
+                photoURL = getAttr(detailDoc, "#galleria img", "src");
+                photoURL = photoURL.replace("../../","https://");
+                description = getAttr(detailDoc, "meta[itemprop=description]", "content");
+
                 Sight s1 = new Sight();
                 s1.setSightName(name);
                 s1.setZone(zoneName(zone));
+                s1.setCategory(category);
+                s1.setPhotoURL(photoURL);
+                s1.setDescription(description);
+                s1.setAddress(address);
                 sights.add(s1);
             }
         }catch(Exception e) {
@@ -46,4 +62,24 @@ public class KeelungSightsCrawler {
         }
         return "找不到這個區";
     }
+
+    // 讀標籤中間的字，找不到就回傳空字串
+    public static String getText(Document doc, String css) {
+        Element box = doc.select(css).first();
+        if (box == null) {
+            return "";
+        }
+        return box.text();
+    }
+
+    // 讀屬性，找不到就回傳空字串
+    public static String getAttr(Document doc, String css, String attrName) {
+        Element box = doc.select(css).first();
+        if (box == null) {
+            return "";
+        }
+        return box.attr(attrName);
+    }
+
+
 }
